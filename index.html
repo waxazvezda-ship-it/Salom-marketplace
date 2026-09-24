@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Salom Marketplace</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;
+  background:#f5f6fa;color:#111;min-height:100vh;
+  padding-bottom:85px
+}
+.header{
+  padding:18px 18px 10px;
+  background:linear-gradient(135deg,#111,#292929);
+  color:white;border-radius:0 0 28px 28px
+}
+.logo{font-size:27px;font-weight:800}
+.subtitle{opacity:.65;font-size:13px;margin-top:3px}
+.search{
+  margin-top:17px;background:#fff1;border:1px solid #ffffff22;
+  border-radius:15px;padding:13px 15px;color:#aaa;width:100%;
+  outline:none;font-size:15px
+}
+.container{padding:18px}
+.section-title{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:8px 0 14px
+}
+.section-title h2{font-size:21px}
+.categories{
+  display:flex;gap:10px;overflow-x:auto;padding-bottom:5px
+}
+.categories::-webkit-scrollbar{display:none}
+.cat{
+  flex:none;background:white;border:0;border-radius:15px;
+  padding:11px 16px;font-weight:600
+}
+.cat.active{background:#111;color:white}
+.products{
+  display:grid;grid-template-columns:1fr 1fr;gap:13px
+}
+.card{
+  background:white;border-radius:21px;padding:10px;
+  box-shadow:0 4px 18px #00000009;overflow:hidden
+}
+.product-img{
+  width:100%;aspect-ratio:1/1;background:#f1f2f5;
+  border-radius:16px;display:flex;align-items:center;
+  justify-content:center;font-size:55px
+}
+.product-name{font-weight:700;font-size:15px;margin:10px 3px 5px}
+.price{font-size:16px;font-weight:800;margin:0 3px 9px}
+.buy{
+  width:100%;border:0;background:#111;color:white;
+  padding:11px;border-radius:13px;font-weight:700
+}
+.bottom{
+  position:fixed;z-index:10;bottom:0;left:0;right:0;
+  background:#ffffffed;backdrop-filter:blur(20px);
+  border-top:1px solid #ddd;padding:8px 10px;
+  display:flex;justify-content:space-around
+}
+.nav{
+  border:0;background:none;color:#777;font-size:11px;
+  min-width:65px;padding:4px
+}
+.nav span{display:block;font-size:23px;margin-bottom:2px}
+.nav.active{color:#111;font-weight:700}
+.page{display:none}.page.active{display:block}
+.cart-item{
+  background:white;border-radius:18px;padding:13px;
+  display:flex;gap:12px;margin-bottom:10px;align-items:center
+}
+.cart-icon{
+  width:65px;height:65px;background:#f1f2f5;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:32px
+}
+.cart-info{flex:1}
+.qty{display:flex;align-items:center;gap:10px;margin-top:7px}
+.qty button{
+  border:0;background:#eee;width:27px;height:27px;border-radius:9px
+}
+.empty{text-align:center;padding:70px 20px;color:#888}
+.primary{
+  width:100%;border:0;background:#111;color:#fff;
+  padding:15px;border-radius:15px;font-weight:700;font-size:16px
+}
+.profile-box{
+  background:white;border-radius:22px;padding:20px;margin-bottom:13px
+}
+.avatar{
+  width:70px;height:70px;border-radius:50%;background:#111;color:white;
+  display:flex;align-items:center;justify-content:center;font-size:27px;
+  margin-bottom:12px
+}
+.setting{
+  width:100%;background:white;border:0;border-radius:16px;
+  padding:17px;margin-bottom:9px;text-align:left;font-size:15px
+}
+.promo{
+  display:flex;gap:8px;margin:14px 0
+}
+.promo input{
+  flex:1;border:1px solid #ddd;border-radius:13px;padding:13px;
+  outline:none
+}
+.promo button{
+  border:0;background:#111;color:white;border-radius:13px;padding:0 16px
+}
+.notice{
+  background:#eaf7ee;color:#19713b;padding:12px;border-radius:13px;
+  margin-bottom:12px;display:none
+}
+</style>
+</head>
+
+<body>
+
+<div id="home" class="page active">
+  <header class="header">
+    <div class="logo">Salom Marketplace</div>
+    <div class="subtitle">O‘zbekiston bo‘ylab texnika</div>
+    <input class="search" id="search" placeholder="🔍  Mahsulot qidirish..." oninput="renderProducts()">
+  </header>
+
+  <div class="container">
+    <div class="section-title">
+      <h2 id="catTitle">Kategoriyalar</h2>
+    </div>
+
+    <div class="categories">
+      <button class="cat active" onclick="filterCat('all',this)">Barchasi</button>
+      <button class="cat" onclick="filterCat('iphone',this)">iPhone</button>
+      <button class="cat" onclick="filterCat('samsung',this)">Samsung</button>
+      <button class="cat" onclick="filterCat('other',this)">Boshqa</button>
+    </div>
+
+    <div class="section-title" style="margin-top:22px">
+      <h2>Mahsulotlar</h2>
+    </div>
+
+    <div id="products" class="products"></div>
+  </div>
+</div>
+
+<div id="cart" class="page">
+  <div class="container">
+    <div class="section-title"><h2>Savat</h2></div>
+    <div id="cartList"></div>
+
+    <div id="checkout" style="display:none">
+      <div class="promo">
+        <input id="promo" placeholder="Promo-kod">
+        <button onclick="applyPromo()">Qo‘llash</button>
+      </div>
+      <div id="promoMsg" class="notice"></div>
+
+      <div class="profile-box">
+        <b>Buyurtma ma’lumotlari</b>
+        <p style="margin-top:9px;color:#777;font-size:14px">
+          Buyurtma yuborilgandan so‘ng operator siz bilan bog‘lanadi.
+        </p>
+      </div>
+
+      <button class="primary" onclick="sendOrder()">Buyurtma berish</button>
+    </div>
+  </div>
+</div>
+
+<div id="profile" class="page">
+  <div class="container">
+    <div class="section-title"><h2>Profil</h2></div>
+
+    <div class="profile-box">
+      <div class="avatar" id="avatar">S</div>
+      <h2 id="userName">Salom!</h2>
+      <p id="userUsername" style="color:#777;margin-top:5px"></p>
+    </div>
+
+    <button class="setting" onclick="showLang()">🌐 Til &nbsp; <b id="langText">O‘zbekcha</b></button>
+    <button class="setting" onclick="contactTelegram()">💬 Telegram orqali yozish</button>
+    <button class="setting" onclick="contactInstagram()">📷 Instagram</button>
+    <button class="setting" onclick="callSupport()">📞 Qo‘ng‘iroq qilish</button>
+  </div>
+</div>
+
+<div id="langPage" class="page">
+  <div class="container">
+    <div class="section-title">
+      <button onclick="go('profile')" style="border:0;background:none;font-size:25px">‹</button>
+      <h2>Til</h2><span></span>
+    </div>
+    <button class="setting" onclick="setLang('uz')">🇺🇿 O‘zbekcha</button>
+    <button class="setting" onclick="setLang('ru')">🇷🇺 Русский</button>
+    <button class="setting" onclick="setLang('en')">🇬🇧 English</button>
+  </div>
+</div>
+
+<nav class="bottom">
+  <button class="nav active" onclick="go('home',this)">
+    <span>⌂</span>Do‘kon
+  </button>
+  <button class="nav" onclick="go('cart',this)">
+    <span>🛒</span>Savat <small id="cartCount"></small>
+  </button>
+  <button class="nav" onclick="go('profile',this)">
+    <span>👤</span>Profil
+  </button>
+</nav>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor("#111111");
+  tg.setBackgroundColor("#f5f6fa");
+}
+
+const products=[
+  {id:1,name:"iPhone 13",price:5500000,cat:"iphone",icon:"📱"},
+  {id:2,name:"iPhone 14",price:6900000,cat:"iphone",icon:"📱"},
+  {id:3,name:"iPhone 15",price:8200000,cat:"iphone",icon:"📱"},
+  {id:4,name:"iPhone 15 Pro",price:10500000,cat:"iphone",icon:"📱"},
+  {id:5,name:"Samsung S23",price:6500000,cat:"samsung",icon:"📱"},
+  {id:6,name:"Samsung S24",price:7900000,cat:"samsung",icon:"📱"},
+  {id:7,name:"AirPods Pro",price:2200000,cat:"other",icon:"🎧"},
+  {id:8,name:"Apple Watch",price:3000000,cat:"other",icon:"⌚"}
+];
+
+let cart=[];
+let currentCat="all";
+let discount=0;
+
+function money(n){
+ return new Intl.NumberFormat("uz-UZ").format(n)+" so‘m";
+}
+
+function renderProducts(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const box=document.getElementById("products");
+ const list=products.filter(p=>
+   (currentCat==="all"||p.cat===currentCat)&&
+   p.name.toLowerCase().includes(q)
+ );
+ box.innerHTML=list.map(p=>`
+   <div class="card">
+     <div class="product-img">${p.icon}</div>
+     <div class="product-name">${p.name}</div>
+     <div class="price">${money(p.price)}</div>
+     <button class="buy" onclick="addCart(${p.id})">Savatga</button>
+   </div>
+ `).join("");
+}
+
+function filterCat(cat,el){
+ currentCat=cat;
+ document.querySelectorAll(".cat").forEach(x=>x.classList.remove("active"));
+ el.classList.add("active");
+ renderProducts();
+}
+
+function addCart(id){
+ const p=products.find(x=>x.id===id);
+ const item=cart.find(x=>x.id===id);
+ if(item)item.qty++;
+ else cart.push({...p,qty:1});
+ updateCart();
+ if(tg) tg.HapticFeedback?.impactOccurred("light");
+}
+
+function updateCart(){
+ document.getElementById("cartCount").textContent=
+   cart.reduce((a,b)=>a+b.qty,0)||"";
+ renderCart();
+}
+
+function renderCart(){
+ const box=document.getElementById("cartList");
+ const checkout=document.getElementById("checkout");
+
+ if(!cart.length){
+   box.innerHTML='<div class="empty"><div style="font-size:50px">🛒</div><h3>Savat bo‘sh</h3><p style="margin-top:7px">Mahsulotlarni savatga qo‘shing.</p></div>';
+   checkout.style.display="none";
+   return;
+ }
+
+ checkout.style.display="block";
+
+ box.innerHTML=cart.map(x=>`
+ <div class="cart-item">
+   <div class="cart-icon">${x.icon}</div>
+   <div class="cart-info">
+     <b>${x.name}</b>
+     <div style="margin-top:5px">${money(x.price)}</div>
+     <div class="qty">
+       <button onclick="changeQty(${x.id},-1)">−</button>
+       <b>${x.qty}</b>
+       <button onclick="changeQty(${x.id},1)">+</button>
+     </div>
+   </div>
+ </div>
+ `).join("");
+
+ let total=cart.reduce((a,b)=>a+b.price*b.qty,0);
+ if(discount) total*=1-discount/100;
+
+ box.innerHTML+=`
+ <div class="profile-box">
+   <div style="display:flex;justify-content:space-between">
+     <span>Jami:</span><b>${money(total)}</b>
+   </div>
+   ${discount?`<small style="color:green">${discount}% chegirma qo‘llandi</small>`:""}
+ </div>`;
+}
+
+function changeQty(id,n){
+ const item=cart.find(x=>x.id===id);
+ if(!item)return;
+ item.qty+=n;
+ if(item.qty<=0)cart=cart.filter(x=>x.id!==id);
+ updateCart();
+}
+
+function applyPromo(){
+ const code=document.getElementById("promo").value.trim();
+ const msg=document.getElementById("promoMsg");
+
+ if(code==="Shaxa.19"){
+   discount=12;
+   msg.textContent="✓ Promo-kod qabul qilindi: 12% chegirma";
+   msg.style.display="block";
+ }else{
+   discount=0;
+   msg.textContent="Promo-kod noto‘g‘ri yoki faol emas.";
+   msg.style.display="block";
+ }
+ renderCart();
+}
+
+function sendOrder(){
+ const user=tg?.initDataUnsafe?.user;
+ const order={
+   products:cart.map(x=>({name:x.name,qty:x.qty})),
+   discount,
+   telegram_id:user?.id||"",
+   username:user?.username||"",
+   first_name:user?.first_name||"",
+   last_name:user?.last_name||""
+ };
+
+ console.log("ORDER:",order);
+
+ if(tg){
+   tg.sendData(JSON.stringify(order));
+   tg.HapticFeedback?.notificationOccurred("success");
+ }else{
+   alert("Buyurtma tayyor! Telegram ichida yuborilganda admin botga jo‘natiladi.");
+ }
+}
+
+function go(page,el){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ document.getElementById(page).classList.add("active");
+
+ if(el){
+   document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));
+   el.classList.add("active");
+ }
+ window.scrollTo(0,0);
+}
+
+function showLang(){go("langPage")}
+
+function setLang(lang){
+ const names={
+   uz:"O‘zbekcha",
+   ru:"Русский",
+   en:"English"
+ };
+ document.getElementById("langText").textContent=names[lang];
+ go("profile");
+}
+
+function contactTelegram(){
+ location.href="https://t.me/salom_marketplace_admin";
+}
+
+function contactInstagram(){
+ location.href="https://instagram.com/salom_marketplace";
+}
+
+function callSupport(){
+ location.href="tel:+998501568743";
+}
+
+function loadTelegramUser(){
+ const user=tg?.initDataUnsafe?.user;
+ if(!user)return;
+
+ document.getElementById("userName").textContent=
+   [user.first_name,user.last_name].filter(Boolean).join(" ")||"Salom!";
+ document.getElementById("userUsername").textContent=
+   user.username?"@"+user.username:"";
+ document.getElementById("avatar").textContent=
+   (user.first_name||"S").charAt(0).toUpperCase();
+}
+
+renderProducts();
+updateCart();
+loadTelegramUser();
+</script>
+
+</body>
+</html>
